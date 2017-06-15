@@ -1,7 +1,7 @@
-const ACCESS_TOKEN = "99gxyd30En1qnevPHiAFUGDqoooKRiuEWttxBSBP";
+const ACCESS_TOKEN = "LPePyCbtapwQw1QeWEU2XyzvJLXifUK7tifCTgJg";
 const API = require('groupme').Stateless;
-const BOT_ID = "4ae74446051b211c687eb564f0";
-const GROUP_ID = 31634795;
+const BOT_ID = "6d7733b10d45fe2f444fed3640";
+const GROUP_ID = 28798408;
 
 import * as helpers from "./helpers";
 
