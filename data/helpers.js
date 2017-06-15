@@ -157,7 +157,6 @@ export const getUserLastSeen = () => {
                 last_seen = message.created_at;
             }
         }
-
         let output = {
             username: args.username,
             last_seen: new Date(last_seen)
