@@ -122,6 +122,10 @@ export const getAllMessages = async function () {
 export const countWords = function (messages) {
     let totalWords = 0;
     for (let message of messages) {
+        if ("bot" === message.sender_type) { // Ignore bot messages
+            continue;
+        }
+
         let text = message.text;
         if (isEmpty(text)) {
             continue;
@@ -135,6 +139,11 @@ export const countWords = function (messages) {
 export const groupMeWordCount = function (messages, word) {
     let wordsCount = 0;
     for (let message of messages) {
+
+        if ("bot" === message.sender_type) {  // Ignore bot messages
+            continue;
+        }
+
         let text = message.text;
         if (isEmpty(text)) {
             continue;
