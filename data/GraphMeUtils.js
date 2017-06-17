@@ -5,7 +5,6 @@ const GROUP_ID = 28798408;
 
 import * as helpers from "./helpers";
 
-
 export const postBotMessage = async function (req) {
     console.log("Request Payload");
     console.log(req.body);
@@ -27,13 +26,14 @@ export const postBotMessage = async function (req) {
         let textArray = text.split(" ");
         let messages = await getAllMessages();
 
-        console.log(textArray.length);
+        console.log("Command length: " + textArray.length);
         if (textArray.length > 1) {
             let word = textArray[1];
+            console.log("Count word instances: " + word);
             let wordCount = await groupMeWordCount(messages, word);
             botMessage = "\"" + word + "\" was said " + wordCount.toString() + " times";
         } else {
-            let totalWords = countWords(messages);
+            let totalWords = await countWords(messages);
             botMessage = "Total words of all time: " + totalWords;
         }
         consoleMessage = "Bot sent a word count reply.";
@@ -123,6 +123,9 @@ export const countWords = function (messages) {
     let totalWords = 0;
     for (let message of messages) {
         let text = message.text;
+        if (isEmpty(text)) {
+            continue;
+        }
         totalWords += text.trim().split(/\s+/).length;
     }
     return totalWords;
@@ -133,10 +136,17 @@ export const groupMeWordCount = function (messages, word) {
     let wordsCount = 0;
     for (let message of messages) {
         let text = message.text;
+        if (isEmpty(text)) {
+            continue;
+        }
         if (text.includes(word)) {
             wordsCount++;
         }
     }
     return wordsCount;
+}
+
+export const isEmpty = function (str) {
+    return (!str || 0 === str.length);
 }
 
