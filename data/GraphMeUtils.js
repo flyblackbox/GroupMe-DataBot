@@ -38,6 +38,12 @@ export const postBotMessage = async function (req) {
         }
         consoleMessage = "Bot sent a word count reply.";
     } else if ("user" === sender_type && text.includes("/hearts")) {
+        let textArray = text.split(" ");
+        let hasNumber = textArray.length > 1;
+        let sinceHours = hasNumber ? textArray[1] : 0;
+
+        console.log("Hearts count has number: " + hasNumber);
+
         let messages = await getAllMessages();
         let groupDetails = await helpers.callGroupDetails(ACCESS_TOKEN);
         let members = groupDetails.members;
@@ -46,11 +52,20 @@ export const postBotMessage = async function (req) {
             let count = 0;
             for (let message of messages) {
                 if (member.user_id == message.user_id) {
+                    let last_seen = message.created_at;
+                    let dateNow = new Date();
+                    let dateMsg = new Date(last_seen * 1000);
+                    let hourDiff = Math.abs(dateNow - dateMsg) / 36e5;
+
+                    if (hasNumber && sinceHours < hourDiff) {
+                        break;
+                    }
+
                     count += message.favorited_by.length;
                 }
             }
 
-            let heartCount = member.nickname + ":" + count;
+            let heartCount = member.nickname + ": " + count;
             heartCounts.push(heartCount);
         }
 
@@ -158,4 +173,3 @@ export const groupMeWordCount = function (messages, word) {
 export const isEmpty = function (str) {
     return (!str || 0 === str.length);
 }
-
