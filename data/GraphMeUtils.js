@@ -12,7 +12,7 @@ export const postBotMessage = async function (req) {
     let consoleMessage = "";
     let botMessage = "";
     let sender_type = req.body.sender_type;
-    let text = req.body.text;
+    let text = isEmpty(req.body.text) ? req.body.text : req.body.text.replace(/\s+/g, '');
 
     if ("bot" === sender_type) {
         console.log("No action..");
@@ -103,7 +103,8 @@ export const postBotMessage = async function (req) {
             }
         }
 
-        botMessage = await PersonalityInsights.getPersonalityInsights(contentItems);
+        // botMessage = await PersonalityInsights.getPersonalityInsights(contentItems);
+        botMessage = "Command is not yet available.";
         consoleMessage = "Bot sent a Personality Insigths reply.";
     }
 
