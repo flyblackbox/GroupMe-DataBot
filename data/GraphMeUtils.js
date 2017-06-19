@@ -3,7 +3,8 @@ const API = require('groupme').Stateless;
 const BOT_ID = "6d7733b10d45fe2f444fed3640";
 const GROUP_ID = 28798408;
 
-import * as helpers from "./helpers";
+import * as helpers from "./helpers"
+import * as PersonalityInsights from "./PersonalityInsights";
 
 export const postBotMessage = async function (req) {
     console.log("Request Payload");
@@ -86,6 +87,24 @@ export const postBotMessage = async function (req) {
         let dateF = new Date(last_seen * 1000);
         botMessage = dateF.toUTCString();
         consoleMessage = "Bot sent a last seen timestamp reply.";
+    } else if ("user" === sender_type && text.includes("/personality")) {
+        let messages = await getAllMessages();
+        let user_id = req.body.attachments[0].user_ids[0];
+        let contentItems = [];
+        for (let message of messages) {
+            if (user_id === message.user_id) {
+                contentItems.push({
+                    "content": message.text,
+                    "contenttype": "text/plain",
+                    "created": message.created_at,
+                    "id": message.id,
+                    "language": "en"
+                });
+            }
+        }
+
+        botMessage = await PersonalityInsights.getPersonalityInsights(contentItems);
+        consoleMessage = "Bot sent a Personality Insigths reply.";
     }
 
     if (botMessage) {
