@@ -12,14 +12,14 @@ export const postBotMessage = async function (req) {
     let consoleMessage = "";
     let botMessage = "";
     let sender_type = req.body.sender_type;
-    let text = isEmpty(req.body.text) ? req.body.text : req.body.text.replace(/\s+/g, '');
+    let text = isEmpty(req.body.text) ? req.body.text : req.body.text.trim();
 
     if ("bot" === sender_type) {
         console.log("No action..");
     }
 
     if ("user" === sender_type && ['Hi', 'Hello', 'hi', 'hello'].includes(text)) {
-        let randomText = ["Hello to you!", "Hi!", "Hola!"];
+        let randomText = ["Hello to you!", "Hi!"];
         let id = Math.round(Math.random() * (randomText.length - 1));
         botMessage = randomText[id];
         consoleMessage = "Bot sent hi reply.";
@@ -88,11 +88,35 @@ export const postBotMessage = async function (req) {
         botMessage = dateF.toUTCString();
         consoleMessage = "Bot sent a last seen timestamp reply.";
     } else if ("user" === sender_type && text.includes("/personality")) {
+        console.log(text);
+        let textArray = text.split(" ");
+        console.log(textArray);
+        console.log(textArray.length);
+        let hasNumber = textArray.length === 3;
+        let sinceHours = hasNumber ? textArray[2] : 0;
+
         let messages = await getAllMessages();
         let user_id = req.body.attachments[0].user_ids[0];
+        let dateNow = new Date();
         let contentItems = [];
+        let i = 0;
+        let username = "";
         for (let message of messages) {
             if (user_id === message.user_id) {
+                username = message.name;
+                let dateMsg = new Date(message.created_at * 1000);
+                let hourDiff = Math.abs(dateNow - dateMsg) / 36e5;
+
+                if (hasNumber && sinceHours < hourDiff) {
+                    console.log("Loop breaks at " + i + " times.");
+                    break;
+                }
+
+                if (!message.text) {
+                    console.log("Empty text.");
+                    continue;
+                }
+
                 contentItems.push({
                     "content": message.text,
                     "contenttype": "text/plain",
@@ -100,12 +124,15 @@ export const postBotMessage = async function (req) {
                     "id": message.id,
                     "language": "en"
                 });
+                i++;
             }
         }
 
-        // botMessage = await PersonalityInsights.getPersonalityInsights(contentItems);
-        botMessage = "Command is not yet available.";
-        consoleMessage = "Bot sent a Personality Insigths reply.";
+        let personalityInsights = await PersonalityInsights.getPersonalityInsights(contentItems);
+        let firstPersonality = personalityInsights.personality[0].name;
+
+        botMessage = username + " has been " + firstPersonality.toLowerCase() + " over the past " + sinceHours + " hours";
+        consoleMessage = "Bot sent a Personality Insights reply.";
     }
 
     if (botMessage) {
@@ -114,8 +141,8 @@ export const postBotMessage = async function (req) {
         }
         API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function (err, ret) {
             if (!err) {
-                console.log(consoleMessage);
                 console.log(botMessage);
+                console.log(consoleMessage);
             }
         });
     }
