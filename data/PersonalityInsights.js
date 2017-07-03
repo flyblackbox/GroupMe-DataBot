@@ -25,7 +25,7 @@ export const getPersonalityInsights = async function (contentItems) {
 
         personality_insights.profile(params, function (error, response) {
                 if (error)
-                    resolve(error);
+                    reject(error);
                 else
                     resolve(JSON.parse(JSON.stringify(response, null, 2)));
             }

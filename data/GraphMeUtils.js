@@ -90,8 +90,8 @@ export const postBotMessage = async function (req) {
     } else if ("user" === sender_type && text.includes("/personality")) {
         console.log(text);
 
-        let sinceHours = text.match(/\d+$/)[0];
-
+        let sinceHours = text.match(/\d+$/);
+        console.log("sinceHours: " + sinceHours);
         if (!sinceHours) {
             sinceHours = 0;
         }
@@ -130,13 +130,16 @@ export const postBotMessage = async function (req) {
         }
 
         let personalityInsights = await PersonalityInsights.getPersonalityInsights(contentItems);
-        let firstPersonality = personalityInsights.personality[0].name;
-
-        botMessage = username + " has been " + firstPersonality.toLowerCase();
+        console.log("Personality response length: " + personalityInsights.personality.length);
+        botMessage = username + " has been ";
         if (sinceHours > 0) {
-            botMessage = botMessage + " over the past " + sinceHours + " hours";
+            botMessage += personalityInsights.personality[0].name.toLowerCase() + " over the past " + sinceHours.toString() + " hours";
+        } else {
+            let id = Math.round(Math.random() * (personalityInsights.personality.length - 1));
+            botMessage += personalityInsights.personality[id].name.toLowerCase();
         }
 
+        botMessage += ".";
         consoleMessage = "Bot sent a Personality Insights reply.";
     }
 
@@ -146,8 +149,8 @@ export const postBotMessage = async function (req) {
         }
         API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function (err, ret) {
             if (!err) {
-                console.log(botMessage);
-                console.log(consoleMessage);
+        console.log(botMessage);
+        console.log(consoleMessage);
             }
         });
     }
