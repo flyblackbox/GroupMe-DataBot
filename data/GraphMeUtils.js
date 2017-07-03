@@ -89,11 +89,12 @@ export const postBotMessage = async function (req) {
         consoleMessage = "Bot sent a last seen timestamp reply.";
     } else if ("user" === sender_type && text.includes("/personality")) {
         console.log(text);
-        let textArray = text.split(" ");
-        console.log(textArray);
-        console.log(textArray.length);
-        let hasNumber = textArray.length === 3;
-        let sinceHours = hasNumber ? textArray[2] : 0;
+
+        let sinceHours = text.match(/\d+$/)[0];
+
+        if (!sinceHours) {
+            sinceHours = 0;
+        }
 
         let messages = await getAllMessages();
         let user_id = req.body.attachments[0].user_ids[0];
@@ -107,7 +108,7 @@ export const postBotMessage = async function (req) {
                 let dateMsg = new Date(message.created_at * 1000);
                 let hourDiff = Math.abs(dateNow - dateMsg) / 36e5;
 
-                if (hasNumber && sinceHours < hourDiff) {
+                if (sinceHours !== 0 && sinceHours < hourDiff) {
                     console.log("Loop breaks at " + i + " times.");
                     break;
                 }
@@ -131,7 +132,11 @@ export const postBotMessage = async function (req) {
         let personalityInsights = await PersonalityInsights.getPersonalityInsights(contentItems);
         let firstPersonality = personalityInsights.personality[0].name;
 
-        botMessage = username + " has been " + firstPersonality.toLowerCase() + " over the past " + sinceHours + " hours";
+        botMessage = username + " has been " + firstPersonality.toLowerCase();
+        if (sinceHours > 0) {
+            botMessage = botMessage + " over the past " + sinceHours + " hours";
+        }
+
         consoleMessage = "Bot sent a Personality Insights reply.";
     }
 
