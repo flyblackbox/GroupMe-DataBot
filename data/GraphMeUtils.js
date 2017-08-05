@@ -276,12 +276,12 @@ export const postBotMessage = async function(req) {
         let opts = {
             picture_url: "",
         }
-        // API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function(err, ret) {
-        //     if (!err) {
+        API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function(err, ret) {
+            if (!err) {
                 console.log(botMessage);
                 console.log(consoleMessage);
-        //     }
-        // });
+            }
+        });
     }
 }
 
