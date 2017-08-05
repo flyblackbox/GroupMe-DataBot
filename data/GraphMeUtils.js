@@ -1,10 +1,13 @@
+import * as helpers from "./helpers";
+import * as PersonalityInsights from "./PersonalityInsights";
+import dotenvConfig from 'dotenv';
+
+dotenvConfig.config();
+
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const BOT_ID = process.env.BOT_ID;
 const GROUP_ID = process.env.GROUP_ID;
 const API = require('groupme').Stateless;
-
-import * as helpers from "./helpers";
-import * as PersonalityInsights from "./PersonalityInsights";
 
 // when we receive a message
 export const postBotMessage = async function(req) {
@@ -23,8 +26,13 @@ export const postBotMessage = async function(req) {
     } else if (sender_type === "user") {
         // convert all text to lowercase for easier parsing
         text = text.toLowerCase();
+        console.log("Processing bot response..");
 
-        if (['hi', 'hello'].includes(text)) {
+        let arrayGreetings =  ['hi', 'hello'];
+        let isHi = arrayGreetings.includes(text);
+        console.log(text, isHi);
+        if (isHi) {
+            console.log("Processing Bot greetings!");
             // library of responses to the above 'if'
             let randomText = [
                 'Hi, I am the ArmBot',
@@ -143,36 +151,36 @@ export const postBotMessage = async function(req) {
 
                 // lets be smart about storing this so we can sort it     
                 let userTotal={
-                  "member": member.nickname,
-                  "count": count
+                    "member": member.nickname,
+                    "count": count
                 }
-                
+
                 console.log(userTotal);
-                
+
                 // add data to groupTotal sorted by total
                 if( groupTotal.length == 0 ){
-                  // if this shit's empty, just push it
-                  groupTotal.push(userTotal);
-                }else{
-                  let added = false;
-                  
-                  // else, look through the current groupTotal
-                  for(let i =0; i< groupTotal.length; i++){
-
-                    // if the userTotal at this index is less than the one we are trying to add
-                    if( groupTotal[i].count <= userTotal.count ){
-                      // splice this new usertotal into the group total
-                      groupTotal.splice(i, 0, userTotal );
-                      added = true;
-                      break;
-                    }
-                  }
-                  if(!added){
+                    // if this shit's empty, just push it
                     groupTotal.push(userTotal);
-                  }
+                }else{
+                    let added = false;
+
+                    // else, look through the current groupTotal
+                    for(let i =0; i< groupTotal.length; i++){
+
+                        // if the userTotal at this index is less than the one we are trying to add
+                        if( groupTotal[i].count <= userTotal.count ){
+                            // splice this new usertotal into the group total
+                            groupTotal.splice(i, 0, userTotal );
+                            added = true;
+                            break;
+                        }
+                    }
+                    if(!added){
+                        groupTotal.push(userTotal);
+                    }
                 }
             }
-          
+
             if (sinceHours == 0) {
                 botMessage = "Hearts Received All Time\n\n";
             } else {
@@ -180,9 +188,9 @@ export const postBotMessage = async function(req) {
             }
 
             groupTotal.forEach(function(item,index,array){
-                  botMessage += (index+1) + ". " + item.member + " : " + item.count + "\n";
+                botMessage += (index+1) + ". " + item.member + " : " + item.count + "\n";
             });
-          
+
             consoleMessage = "Bot sent a heart count reply.";
 
         } else if (text.includes("/lastseen")) {
@@ -268,12 +276,12 @@ export const postBotMessage = async function(req) {
         let opts = {
             picture_url: "",
         }
-        API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function(err, ret) {
-            if (!err) {
+        // API.Bots.post(ACCESS_TOKEN, BOT_ID, botMessage, opts, function(err, ret) {
+        //     if (!err) {
                 console.log(botMessage);
                 console.log(consoleMessage);
-            }
-        });
+        //     }
+        // });
     }
 }
 
