@@ -191,3 +191,41 @@ export const getHeartCount = () => {
         return heartCounts;
     }
 }
+
+
+// Brads shit
+
+export const getMessageWrapper = async (args) => {
+    let data = JSON.parse(await groupMeApiGetMessages( args ));
+    let response = data.response;
+    return response;
+}
+
+
+export const groupMeApiGetMessages = async ( args ) => {
+    console.log("Calling GroupMe API...");
+
+    let uri = GROUP_ME_BASE_URL + "groups/" + args.group_id + "/messages" + "?limit="+args.limit+ "&token=" + args.token;
+    if (args.before_id > 0) {
+        uri = uri + "&before_id=" + args.before_id;
+    }
+
+    let requestObject = {
+        url: uri,
+        method: "GET",
+    }
+
+    console.log(requestObject);
+
+    return new Promise(function (resolve, reject) { //can't get 'await' to work with 'request'
+        request(requestObject, (error, response, body) => {
+            if (!error && response.statusCode === 200) {
+                resolve(body || response);
+            } else {
+                console.log("Response:" + response);
+                console.log("Error: " + error);
+                resolve({error: "Empty Response"});
+            }
+        })
+    });
+}

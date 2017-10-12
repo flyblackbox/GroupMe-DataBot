@@ -1,13 +1,10 @@
-import * as helpers from "./helpers";
-import * as PersonalityInsights from "./PersonalityInsights";
-import dotenvConfig from 'dotenv';
-
-dotenvConfig.config();
-
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const BOT_ID = process.env.BOT_ID;
 const GROUP_ID = process.env.GROUP_ID;
 const API = require('groupme').Stateless;
+
+import * as helpers from "./helpers";
+import * as PersonalityInsights from "./PersonalityInsights";
 
 // when we receive a message
 export const postBotMessage = async function(req) {
@@ -26,13 +23,8 @@ export const postBotMessage = async function(req) {
     } else if (sender_type === "user") {
         // convert all text to lowercase for easier parsing
         text = text.toLowerCase();
-        console.log("Processing bot response..");
 
-        let arrayGreetings =  ['hi', 'hello'];
-        let isHi = arrayGreetings.includes(text);
-        console.log(text, isHi);
-        if (isHi) {
-            console.log("Processing Bot greetings!");
+        if (['hi', 'hello'].includes(text)) {
             // library of responses to the above 'if'
             let randomText = [
                 'Hi, I am the ArmBot',
@@ -66,6 +58,99 @@ export const postBotMessage = async function(req) {
             }
             consoleMessage = "Bot sent a word count reply.";
 
+        } else if (text.includes("/messages")) {
+            // this whole thing needs checks to make sure the syntax is:
+            // syntax:   /hearts number units
+            // example:  /hearts 5 days
+
+            // pop the command into an array
+            let textArray = text.split(" ");
+            // if length is greater than 1 we have a number
+            let hasNumber = textArray.length > 1;
+            // if length is greater than 2 we have units
+            let hasUnits = textArray.length > 2;
+
+            // if we don't have a number, numHours = 0
+            let numHours = hasNumber ? textArray[1] : 0;
+            // if we have units, use the units as a mulitplier
+
+            // plural will be 1 if we are asking for more than 1 of a unit
+            let plural = numHours == 1 ? 0 : 1;
+
+            // default unitsInText
+            let unitsInText =  numHours + " hour";
+
+            if (hasUnits) {
+                let units = textArray[2];
+
+                if (units.includes("hour")) {
+                    // do nothing
+                }
+                else if (units.includes("day")) {
+                    // 24 hours in a day
+                    unitsInText = numHours + " day";
+                    numHours *= 24;
+                }
+                else if  (units.includes("week")) {
+                    // 7 days in a week
+                    unitsInText = numHours + " week";
+                    numHours *= 24 * 7;
+                }
+                else if  (units.includes("month")) {
+                    // 4 weeks in (most) months
+                    unitsInText = numHours + " month";
+                    numHours *= 24 * 7 * 4
+                }
+                else if  (units.includes("year")) {
+                    // 365 days in a year
+                    unitsInText = numHours + " year";
+                    numHours *= 24 * 365;
+                }
+
+            }
+            if (plural) {
+                unitsInText += "s";
+            }
+
+            // if no time entered, modify to ask for ALL TIME
+            if( numHours == 0 ){
+                numHours = new Date().getTime()/(1000*3600)-1;
+                botMessage = "Messages Sent All Time\n\n";
+            } else {
+                botMessage = "Messages Sent In The Last: " + unitsInText + "\n\n";
+            }
+          
+            // request the messages from N seconds ago till now
+            let messages = await getMessages( numHours * 3600 );
+            let groupDetails = await helpers.callGroupDetails(ACCESS_TOKEN);
+            let members = groupDetails.members;
+          
+            // create a 'message count' field for each member
+            for(let member of members){
+              member.message_count = 0;
+            }
+
+            // loop through all the messages and increment the users messages count
+            let totalHumanMessages = 0;
+            for (let message of messages) {
+              for( let member of members ){
+                if(member.user_id == message.user_id){
+                  totalHumanMessages ++;
+                  member.message_count++;
+                }
+              }            
+            }
+
+            // todo: sort these babies first
+            for(let member of members){
+              member.message_percentage = member.message_percentage == undefined ? 0 : member.message_percentage;
+              botMessage += member.nickname + ": " + member.message_count + " messages (" + (100*(member.message_count/messages.length)).toFixed(2)+"%)\n"
+            }
+          
+            let botCount = messages.length - totalHumanMessages;
+            botMessage += "ArmBot: " + botCount + " messages (" + (100*(botCount/messages.length)).toFixed(2)+ "%)\n";
+            botMessage += "\nTotal Messages: " + messages.length;
+                    
         } else if (text.includes("/hearts")) {
             // this whole thing needs checks to make sure the syntax is:
             // syntax:   /hearts number units
@@ -78,15 +163,15 @@ export const postBotMessage = async function(req) {
             // if length is greater than 2 we have units
             let hasUnits = textArray.length > 2;
 
-            // if we don't have a number, sinceHours = 0
-            let sinceHours = hasNumber ? textArray[1] : 0;
+            // if we don't have a number, numHours = 0
+            let numHours = hasNumber ? textArray[1] : 0;
             // if we have units, use the units as a mulitplier
 
             // plural will be 1 if we are asking for more than 1 of a unit
-            let plural = sinceHours == 1 ? 0 : 1;
+            let plural = numHours == 1 ? 0 : 1;
 
             // default unitsInText
-            let unitsInText = sinceHours + " hour";
+            let unitsInText =  numHours + " hour";
 
             if (hasUnits) {
                 let units = textArray[2];
@@ -96,23 +181,23 @@ export const postBotMessage = async function(req) {
                 }
                 else if (units.includes("day")) {
                     // 24 hours in a day
-                    unitsInText = sinceHours + " day";
-                    sinceHours *= 24;
+                    unitsInText = numHours + " day";
+                    numHours *= 24;
                 }
                 else if  (units.includes("week")) {
                     // 7 days in a week
-                    unitsInText = sinceHours + " week";
-                    sinceHours *= 24 * 7;
+                    unitsInText = numHours + " week";
+                    numHours *= 24 * 7;
                 }
                 else if  (units.includes("month")) {
                     // 4 weeks in (most) months
-                    unitsInText = sinceHours + " month";
-                    sinceHours *= 24 * 7 * 4
+                    unitsInText = numHours + " month";
+                    numHours *= 24 * 7 * 4
                 }
                 else if  (units.includes("year")) {
                     // 365 days in a year
-                    unitsInText = sinceHours + " year";
-                    sinceHours *= 24 * 365;
+                    unitsInText = numHours + " year";
+                    numHours *= 24 * 365;
                 }
 
             }
@@ -120,28 +205,16 @@ export const postBotMessage = async function(req) {
                 unitsInText += "s";
             }
 
-            console.log("Hearts count has number: " + hasNumber);
-
-            let messages = await getAllMessages();
+            let messages = await getMessages( numHours * 3600 );
             let groupDetails = await helpers.callGroupDetails(ACCESS_TOKEN);
             let members = groupDetails.members;
             let heartCounts = [];
-
             let groupTotal = [];
 
             for (let member of members) {
                 let count = 0;
                 for (let message of messages) {
                     if (member.user_id == message.user_id) {
-                        let last_seen = message.created_at;
-                        let dateNow = new Date();
-                        let dateMsg = new Date(last_seen * 1000);
-                        let hourDiff = Math.abs(dateNow - dateMsg) / 36e5;
-
-                        if (hasNumber && sinceHours < hourDiff) {
-                            break;
-                        }
-
                         count += message.favorited_by.length;
                     }
                 }
@@ -151,46 +224,46 @@ export const postBotMessage = async function(req) {
 
                 // lets be smart about storing this so we can sort it     
                 let userTotal={
-                    "member": member.nickname,
-                    "count": count
+                  "member": member.nickname,
+                  "count": count
                 }
-
+                
                 console.log(userTotal);
-
+                
                 // add data to groupTotal sorted by total
                 if( groupTotal.length == 0 ){
-                    // if this shit's empty, just push it
-                    groupTotal.push(userTotal);
+                  // if this shit's empty, just push it
+                  groupTotal.push(userTotal);
                 }else{
-                    let added = false;
+                  let added = false;
+                  
+                  // else, look through the current groupTotal
+                  for(let i =0; i< groupTotal.length; i++){
 
-                    // else, look through the current groupTotal
-                    for(let i =0; i< groupTotal.length; i++){
-
-                        // if the userTotal at this index is less than the one we are trying to add
-                        if( groupTotal[i].count <= userTotal.count ){
-                            // splice this new usertotal into the group total
-                            groupTotal.splice(i, 0, userTotal );
-                            added = true;
-                            break;
-                        }
+                    // if the userTotal at this index is less than the one we are trying to add
+                    if( groupTotal[i].count <= userTotal.count ){
+                      // splice this new usertotal into the group total
+                      groupTotal.splice(i, 0, userTotal );
+                      added = true;
+                      break;
                     }
-                    if(!added){
-                        groupTotal.push(userTotal);
-                    }
+                  }
+                  if(!added){
+                    groupTotal.push(userTotal);
+                  }
                 }
             }
-
-            if (sinceHours == 0) {
+          
+            if (numHours == 0) {
                 botMessage = "Hearts Received All Time\n\n";
             } else {
                 botMessage = "Hearts Received In The Last: " + unitsInText + "\n\n";
             }
 
             groupTotal.forEach(function(item,index,array){
-                botMessage += (index+1) + ". " + item.member + " : " + item.count + "\n";
+                  botMessage += (index+1) + ". " + item.member + " : " + item.count + "\n";
             });
-
+          
             consoleMessage = "Bot sent a heart count reply.";
 
         } else if (text.includes("/lastseen")) {
@@ -359,4 +432,56 @@ export const groupMeWordCount = function(messages, word) {
 
 export const isEmpty = function(str) {
     return (!str || 0 === str.length);
+}
+
+export const getMessages = async function(seconds) {
+  console.log("Getting " + seconds + " seconds worth of messages.");
+  
+	// array to hold the messages we return
+  let messages = [];	
+	// getTime returns milli seconds since epoch, divide by 1k to conver to seconds and subtract how many seconds we care about
+	let seekTime = (new Date().getTime()/1000) - seconds;
+
+	let searchComplete = false;
+	let beforeId = 0;
+  let limit = 100;
+  let totalMessageCount = 0;
+	do{
+		// get a chunk of messages 
+		let data = await helpers.getMessageWrapper({
+			group_id: GROUP_ID,
+			token: ACCESS_TOKEN,
+			before_id: beforeId,
+      limit: limit
+		});
+
+    // set our request limit to the number of messages remaining
+    limit = data.count - messages.length;
+    totalMessageCount = data.count;
+    
+    // if limit is greater than 100, default to 100
+    limit = limit > 100 ? 100 : limit;
+    
+    // if limit is less than 100, set to 0.. who knows why.
+    limit = limit < 100 ? 0 : limit;
+    
+		// loop through the chunk
+		for( let i = 0; i< data.messages.length; i++){
+      // see if this message timestamp is after our seek time
+			if( data.messages[i].created_at > seekTime ){
+        // add it to our messages array
+        messages.push(data.messages[i]);
+			}else{
+        // search is complete! set some flag and gtfo
+				searchComplete = true;
+        break;
+			}
+		}
+    		
+		// reassign the before id for the next chunk request
+    beforeId = data.messages[data.messages.length - 1 ].id;
+  }while( searchComplete == false && limit > 0);
+
+  console.log("Received " + messages.length + " of " + totalMessageCount + " messages.");
+  return messages;
 }
