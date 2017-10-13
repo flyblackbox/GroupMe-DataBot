@@ -1,10 +1,13 @@
+import * as helpers from "./helpers";
+import * as PersonalityInsights from "./PersonalityInsights";
+import dotenvConfig from 'dotenv';
+
+dotenvConfig.config();
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const BOT_ID = process.env.BOT_ID;
 const GROUP_ID = process.env.GROUP_ID;
 const API = require('groupme').Stateless;
 
-import * as helpers from "./helpers";
-import * as PersonalityInsights from "./PersonalityInsights";
 
 // when we receive a message
 export const postBotMessage = async function(req) {
