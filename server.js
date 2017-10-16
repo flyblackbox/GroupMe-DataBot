@@ -3,7 +3,7 @@ import cors from 'cors';
 import {apolloServer} from 'apollo-server';
 import Schema from './data/schema';
 import Resolvers from './data/resolvers';
-import  {postBotMessage} from './data/GroupMeUtils';
+import  {postBotMessage} from './data/GraphMeUtils';
 import bodyParser from 'body-parser';
 
 // import Mocks from './data/mocks';
